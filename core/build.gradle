@@ -1,3 +1,8 @@
+plugins {
+  id 'org.jetbrains.kotlin.jvm'
+  id 'org.jetbrains.kotlin.plugin.serialization' // 👈 necesario para @Serializable
+}
+
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 eclipse.project.name = appName + '-core'
 
@@ -11,6 +16,8 @@ dependencies {
   api "io.github.libktx:ktx-math:$ktxVersion"
   api "io.github.libktx:ktx-preferences:$ktxVersion"
   api "io.github.libktx:ktx-scene2d:$ktxVersion"
+  // 🔹 Librería JSON de Kotlinx
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1"
   api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 
   if(enableGraalNative == 'true') {
