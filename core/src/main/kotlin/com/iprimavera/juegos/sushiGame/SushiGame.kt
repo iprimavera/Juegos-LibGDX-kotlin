@@ -118,7 +118,7 @@ class SushiGame(
         val anchoPantalla = stage.viewport.worldWidth
         val anchoCarta = anchoPantalla / 10f - 13
 
-        // --- 🔴 Línea 1: Cartas del enemigo (giradas 180°) ---
+        // --- 🔴 Línea 1: Cartas del enemigo (giradas 180) ---
         val filaEnemigo = Table()
         filaEnemigo.isTransform = true
         enemigo.mesa.cartas.forEach { carta ->

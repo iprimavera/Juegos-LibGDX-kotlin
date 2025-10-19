@@ -54,11 +54,22 @@ class Mesa {
         } else if (makis > 0) puntos += 3
 
         for (i in 1..sashimi/3) { puntos += 10 }
+        for (i in 1..tempura/2) { puntos += 5 }
 
         if (pudding > mesaEnemiga.getPuddings()) {
             puntos += 6
         } else if (pudding < mesaEnemiga.getPuddings() && pudding > 0) {
             puntos -= 6
+        }
+
+        puntos += when (dumpling) {
+            0 -> 0
+            1 -> 1
+            2 -> 3
+            3 -> 6
+            4 -> 10
+            5 -> 15
+            else -> 15
         }
 
         return puntos
