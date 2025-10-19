@@ -6,6 +6,7 @@ class Mesa {
 
     fun addCarta(carta: Carta) {
         cartas.add(carta)
+        // cartas.sort()
     }
 
     fun contarPuntos(mesaEnemiga: Mesa): Int {

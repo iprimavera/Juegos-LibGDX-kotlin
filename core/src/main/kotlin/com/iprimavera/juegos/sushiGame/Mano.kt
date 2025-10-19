@@ -10,5 +10,6 @@ class Mano {
 
     fun addCarta(carta: Carta) {
         cartas.add(carta)
+        cartas.sort()
     }
 }

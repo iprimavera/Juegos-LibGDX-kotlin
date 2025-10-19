@@ -1,6 +1,7 @@
 package com.iprimavera.juegos.sushiGame
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
@@ -8,6 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
+import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.viewport.ScreenViewport
 import com.iprimavera.juegos.NetworkSession
 import kotlinx.serialization.Serializable
@@ -118,28 +120,32 @@ class SushiGame(
         val anchoPantalla = stage.viewport.worldWidth
         val anchoCarta = anchoPantalla / 10f - 13
 
-        // --- 🔴 Línea 1: Cartas del enemigo (giradas 180) ---
         val filaEnemigo = Table()
-        filaEnemigo.isTransform = true
         enemigo.mesa.cartas.forEach { carta ->
             val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
             val boton = ImageButton(drawable)
-            filaEnemigo.add(boton).size(anchoCarta).pad(5f)
+            filaEnemigo.add(boton).size(anchoCarta).pad(2f).padTop(10f)
         }
 
-        // --- 🟡 Línea 2: Cartas de la mesa (por ejemplo, descartes o visibles) ---
         val filaMesa = Table()
         usuario.mesa.cartas.forEach { carta ->
             val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
             val boton = ImageButton(drawable)
-            filaMesa.add(boton).size(anchoCarta).pad(5f)
+            filaMesa.add(boton).size(anchoCarta).pad(2f).padTop(10f)
         }
 
-        // --- 🟢 Línea 3: Cartas del jugador (clicables) ---
         val filaJugador = Table()
         usuario.mano.cartas.forEachIndexed { index, carta ->
             val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
             val boton = ImageButton(drawable)
+
+            if (usuarioElegida == index) {
+                boton.isTransform = true
+                boton.setOrigin(anchoCarta/2,70f)
+                boton.setScale(1.2f)
+            } else {
+                boton.setScale(1f)
+            }
 
             boton.onClick {
                 usuarioElegida = index
@@ -147,10 +153,9 @@ class SushiGame(
                 actualizarBotones(tabla)
             }
 
-            filaJugador.add(boton).size(anchoCarta).pad(5f)
+            filaJugador.add(boton).size(anchoCarta).pad(2f).padTop(10f)
         }
 
-        // Añadir las 3 filas en orden a la tabla principal
         tabla.add(filaEnemigo).row()
         tabla.add(filaMesa).row()
         tabla.add(filaJugador).row()
@@ -180,24 +185,15 @@ class SushiGame(
         if (!usuario.mano.tieneCartas() && !enemigo.mano.tieneCartas() && partidaEmpezada) {
             val uspuntos = usuario.mesa.contarPuntos(enemigo.mesa)
             val enpuntos = enemigo.mesa.contarPuntos(usuario.mesa)
-            println("Tu puntuacion: $uspuntos")
-            println("La puntuacion de tu enemigo: $enpuntos")
 
-            if (uspuntos > enpuntos) {
-                println("Has ganado!")
-            } else if (uspuntos < enpuntos) {
-                println("Has perdido :(")
-            } else {
-                println("Empate!")
-            }
             game.addScreen(
                 FinPartida(
                     game = game,
                     resultado = uspuntos > enpuntos,
                     puntosJugador = uspuntos,
                     puntosEnemigo = enpuntos,
-                    siguientePantalla = { game.setScreen<SushiGame>() }, // lo que hará al acabar
-                    segundosEspera = 4f // tiempo antes de volver
+                    siguientePantalla = { game.setScreen<SushiGame>() },
+                    segundosEspera = 4f
                 )
             )
             game.setScreen<FinPartida>()

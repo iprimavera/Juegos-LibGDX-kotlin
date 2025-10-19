@@ -15,11 +15,11 @@ import ktx.app.clearScreen
 
 class FinPartida(
     private val game: KtxGame<KtxScreen>,
-    private val resultado: Boolean, // true = ganar, false = perder
+    private val resultado: Boolean,
     private val puntosJugador: Int,
     private val puntosEnemigo: Int,
-    private val siguientePantalla: () -> Unit, // lo que se ejecuta al volver
-    private val segundosEspera: Float = 3f      // segundos antes de volver
+    private val siguientePantalla: () -> Unit,
+    private val segundosEspera: Float = 3f
 ) : KtxScreen {
 
     private val camera = OrthographicCamera()
@@ -58,7 +58,6 @@ class FinPartida(
         tabla.add(enemigoLabel).row()
         stage.addActor(tabla)
 
-        // ⏰ Programar el cambio automático
         Timer.schedule(object : Timer.Task() {
             override fun run() {
                 siguientePantalla()
