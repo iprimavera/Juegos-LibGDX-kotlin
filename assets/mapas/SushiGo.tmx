@@ -725,20 +725,8 @@
 </data>
  </layer>
  <objectgroup id="2" name="zonas">
-  <object id="1" x="35" y="459" width="1211" height="234">
-   <properties>
-    <property name="id" value="elegir"/>
-   </properties>
-  </object>
-  <object id="5" x="153" y="262" width="981" height="142">
-   <properties>
-    <property name="id" value="usuario"/>
-   </properties>
-  </object>
-  <object id="10" x="153" y="94" width="981" height="142">
-   <properties>
-    <property name="id" value="enemigo"/>
-   </properties>
-  </object>
+  <object id="1" name="elegir" x="35" y="459" width="1211" height="234"/>
+  <object id="5" name="usuario" x="153" y="262" width="981" height="142"/>
+  <object id="10" name="enemigo" x="153" y="94" width="981" height="142"/>
  </objectgroup>
 </map>

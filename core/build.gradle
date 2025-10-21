@@ -16,7 +16,7 @@ dependencies {
   api "io.github.libktx:ktx-math:$ktxVersion"
   api "io.github.libktx:ktx-preferences:$ktxVersion"
   api "io.github.libktx:ktx-scene2d:$ktxVersion"
-  // 🔹 Librería JSON de Kotlinx
+  implementation "io.github.libktx:ktx-tiled:1.12.1-rc1"
   implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.1"
   api "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 

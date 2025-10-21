@@ -1,12 +1,14 @@
 package com.iprimavera.juegos.sushiGame
 
 import com.badlogic.gdx.Gdx
+import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.objects.RectangleMapObject
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.TmxMapLoader
+import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
 import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
@@ -24,6 +26,8 @@ import ktx.actors.onClick
 import ktx.app.KtxGame
 import ktx.app.KtxScreen
 import ktx.scene2d.*
+import ktx.assets.*
+import ktx.tiled.*
 
 data class Jugador(var mano: Mano, val mesa: Mesa)
 
@@ -44,6 +48,15 @@ class SushiGame(
 
     private var partidaEmpezada = false
 
+    private val assets = AssetManager().apply {
+        setLoader(TiledMap::class.java, TmxMapLoader())
+        load("mapas/SushiGo.tmx", TiledMap::class.java)
+        finishLoading()
+    }
+
+    private var map: TiledMap = assets.get("mapas/SushiGo.tmx", TiledMap::class.java)
+    private val capaObjetos = map.layers.get("zonas")
+
     @Serializable
     data class DatosIniciales(
         val cartasJugador: MutableList<Carta>,
@@ -51,7 +64,7 @@ class SushiGame(
     )
 
     override fun show() {
-        val viewport = FitViewport(720f, 1280f)
+        val viewport = FitViewport(1280f, 720f)
         stage = Stage(viewport)
         Gdx.input.inputProcessor = stage
         Scene2DSkin.defaultSkin = Skin(Gdx.files.internal("uiskin.json"))
@@ -95,7 +108,7 @@ class SushiGame(
                         println("Enemigo: ${datos.cartasEnemigo}")
                         usuario.mano.cartas = datos.cartasEnemigo
                         enemigo.mano.cartas = datos.cartasJugador
-                        actualizarBotones(stage.actors.find { it is Table } as Table)
+                        actualizarBotones()
                         partidaEmpezada = true
                     }
                 } catch (e: Exception) {
@@ -104,46 +117,42 @@ class SushiGame(
             }
         }
 
-        stage.actors {
-            table {
-                setFillParent(true)
-                center()
-                pad(20f)
-
-                actualizarBotones(this)
-            }
-        }
+        actualizarBotones()
 
     }
 
-    private fun actualizarBotones(tabla: Table) {
-        tabla.clearChildren()
+    private fun actualizarBotones() {
 
-        val anchoPantalla = stage.viewport.worldWidth
-        val anchoCarta = anchoPantalla / 10f - 13
+        stage.clear()
 
-        val filaEnemigo = Table()
-        enemigo.mesa.cartas.forEach { carta ->
-            val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
-            val boton = ImageButton(drawable)
-            filaEnemigo.add(boton).size(anchoCarta).pad(2f).padTop(10f)
-        }
+//        enemigo.mesa.cartas.forEachIndexed { index, carta ->
+//            val objeto = capaObjetos.objects.get("enemigo")
+//            //val posicion =
+//
+//            val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
+//            val boton = ImageButton(drawable)
+//            boton.setPosition(1f,objeto.y)
+//            boton.setScale(2f)
+//            stage.addActor(boton)
+//        }
+//
+//        usuario.mesa.cartas.forEach { carta ->
+//            val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
+//            val boton = ImageButton(drawable)
+//            filaMesa.add(boton).size(anchoCarta).pad(2f).padTop(10f)
+//        }
 
-        val filaMesa = Table()
-        usuario.mesa.cartas.forEach { carta ->
-            val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
-            val boton = ImageButton(drawable)
-            filaMesa.add(boton).size(anchoCarta).pad(2f).padTop(10f)
-        }
-
-        val filaJugador = Table()
+        val objeto = capaObjetos.objects.get("elegir")
         usuario.mano.cartas.forEachIndexed { index, carta ->
             val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
             val boton = ImageButton(drawable)
 
+            boton.setPosition(objeto.x+objeto.width/usuario.mano.cartas.count()*index,objeto.y)
+            boton.setSize(objeto.width/usuario.mano.cartas.count(),objeto.height)
+
             if (usuarioElegida == index) {
                 boton.isTransform = true
-                boton.setOrigin(anchoCarta/2,70f)
+                boton.setOrigin(2f,70f)
                 boton.setScale(1.2f)
             } else {
                 boton.setScale(1f)
@@ -152,15 +161,12 @@ class SushiGame(
             boton.onClick {
                 usuarioElegida = index
                 session.send(index.toString())
-                actualizarBotones(tabla)
+                actualizarBotones()
             }
 
-            filaJugador.add(boton).size(anchoCarta).pad(2f).padTop(10f)
+            stage.addActor(boton)
         }
 
-        tabla.add(filaEnemigo).row()
-        tabla.add(filaMesa).row()
-        tabla.add(filaJugador).row()
     }
 
 
@@ -180,7 +186,7 @@ class SushiGame(
 
             turnoManager.swapManos(usuario,enemigo)
 
-            actualizarBotones(stage.actors.find { it is Table } as Table)
+            actualizarBotones()
 
         }
 
@@ -204,6 +210,10 @@ class SushiGame(
             )
         )
         game.setScreen<FinPartida>()
+    }
+
+    override fun resize(width: Int, height: Int) {
+        stage.viewport.update(width, height, true)
     }
 
     override fun dispose() {
