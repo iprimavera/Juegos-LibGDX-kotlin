@@ -3,6 +3,11 @@ package com.iprimavera.juegos.sushiGame
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.badlogic.gdx.maps.MapLayer
+import com.badlogic.gdx.maps.objects.RectangleMapObject
+import com.badlogic.gdx.maps.tiled.TiledMap
+import com.badlogic.gdx.maps.tiled.TmxMapLoader
+import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
@@ -10,7 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.Align
-import com.badlogic.gdx.utils.viewport.ScreenViewport
+import com.badlogic.gdx.utils.viewport.FitViewport
 import com.iprimavera.juegos.NetworkSession
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -30,12 +35,12 @@ class SushiGame(
 
     private lateinit var usuario: Jugador
     private lateinit var enemigo: Jugador
+    private var usuarioElegida: Int? = null
+    private var enemigoElegida: Int? = null
 
     private lateinit var stage: Stage
 
     private val turnoManager = TurnoManager()
-    private var usuarioElegida: Int? = null
-    private var enemigoElegida: Int? = null
 
     private var partidaEmpezada = false
 
@@ -46,7 +51,8 @@ class SushiGame(
     )
 
     override fun show() {
-        stage = Stage(ScreenViewport())
+        val viewport = FitViewport(720f, 1280f)
+        stage = Stage(viewport)
         Gdx.input.inputProcessor = stage
         Scene2DSkin.defaultSkin = Skin(Gdx.files.internal("uiskin.json"))
 
@@ -76,21 +82,17 @@ class SushiGame(
             val numero = msg.toIntOrNull()
 
             if (numero != null) {
-                // 🟢 Es un número
                 Gdx.app.postRunnable {
                     println("Número recibido: $numero")
                     enemigoElegida = numero
-                    // Aquí actualizas tu lógica con el número recibido
                 }
             } else if (!isHost) {
-                // 🔵 Intentar decodificar JSON de las cartas
                 try {
                     val datos = Json.decodeFromString<DatosIniciales>(msg)
                     Gdx.app.postRunnable {
                         println("Cartas recibidas del servidor:")
                         println("Jugador: ${datos.cartasJugador}")
                         println("Enemigo: ${datos.cartasEnemigo}")
-                        // Aquí puedes asignarlas a tus variables locales
                         usuario.mano.cartas = datos.cartasEnemigo
                         enemigo.mano.cartas = datos.cartasJugador
                         actualizarBotones(stage.actors.find { it is Table } as Table)
@@ -183,22 +185,25 @@ class SushiGame(
         }
 
         if (!usuario.mano.tieneCartas() && !enemigo.mano.tieneCartas() && partidaEmpezada) {
-            val uspuntos = usuario.mesa.contarPuntos(enemigo.mesa)
-            val enpuntos = enemigo.mesa.contarPuntos(usuario.mesa)
-
-            game.addScreen(
-                FinPartida(
-                    game = game,
-                    resultado = uspuntos > enpuntos,
-                    puntosJugador = uspuntos,
-                    puntosEnemigo = enpuntos,
-                    siguientePantalla = { game.setScreen<SushiGame>() },
-                    segundosEspera = 4f
-                )
-            )
-            game.setScreen<FinPartida>()
-
+            ganar()
         }
+    }
+
+    private fun ganar() {
+        val uspuntos = usuario.mesa.contarPuntos(enemigo.mesa)
+        val enpuntos = enemigo.mesa.contarPuntos(usuario.mesa)
+
+        game.addScreen(
+            FinPartida(
+                game = game,
+                resultado = uspuntos > enpuntos,
+                puntosJugador = uspuntos,
+                puntosEnemigo = enpuntos,
+                siguientePantalla = { game.setScreen<SushiGame>() },
+                segundosEspera = 4f
+            )
+        )
+        game.setScreen<FinPartida>()
     }
 
     override fun dispose() {
