@@ -143,7 +143,7 @@ class SushiGame(
                 boton.setPosition(rect.x+rect.width/paquete.cartas.count()*index,rect.y)
                 boton.setSize(carta.textura.width.toFloat()*escala,rect.height)
 
-                if (objeto == "elegir") clickable(boton, index)
+                if (paquete is Mano) clickable(boton, index)
 
                 stage.addActor(boton)
             }
