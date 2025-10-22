@@ -3,6 +3,7 @@ package com.iprimavera.juegos.sushiGame
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.Color
+import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
 import com.badlogic.gdx.maps.MapLayer
 import com.badlogic.gdx.maps.objects.RectangleMapObject
@@ -142,17 +143,10 @@ class SushiGame(
 //            filaMesa.add(boton).size(anchoCarta).pad(2f).padTop(10f)
 //        }
 
-        val objeto = capaObjetos.objects.get("elegir")
-        usuario.mano.cartas.forEachIndexed { index, carta ->
-            val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
-            val boton = ImageButton(drawable)
-
-            boton.setPosition(objeto.x+objeto.width/usuario.mano.cartas.count()*index,objeto.y)
-            boton.setSize(objeto.width/usuario.mano.cartas.count(),objeto.height)
-
+        fun clickable(boton: ImageButton, index: Int) {
             if (usuarioElegida == index) {
                 boton.isTransform = true
-                boton.setOrigin(2f,70f)
+                boton.setOrigin(boton.width/2f,boton.height/2f)
                 boton.setScale(1.2f)
             } else {
                 boton.setScale(1f)
@@ -163,6 +157,22 @@ class SushiGame(
                 session.send(index.toString())
                 actualizarBotones()
             }
+        }
+
+        val elegir = capaObjetos.objects.get("elegir")
+        val maxAncho = elegir.width
+        val espacio = 40f
+        val totalOriginal = usuario.mano.cartas.sumOf { it.textura.width.toDouble() }.toFloat() + espacio * (usuario.mano.cartas.size - 1)
+        val escala: Float = maxAncho / totalOriginal
+
+        usuario.mano.cartas.forEachIndexed { index, carta ->
+            val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
+            val boton = ImageButton(drawable)
+
+            boton.setPosition(elegir.x+elegir.width/usuario.mano.cartas.count()*index,elegir.y)
+            boton.setSize(carta.textura.width.toFloat()*escala,elegir.height)
+
+            clickable(boton,index)
 
             stage.addActor(boton)
         }

@@ -29,7 +29,7 @@ import java.net.Socket
 class ConnectionScreen(
     private val game: KtxGame<KtxScreen>,
     private val onConnected: (session: NetworkSession, isHost: Boolean) -> Unit,
-    private val title: String = "Conexión LAN"
+    private val title: String = "Conexion LAN"
 ) : KtxScreen {
 
     private val camera = OrthographicCamera()
