@@ -2,22 +2,13 @@ package com.iprimavera.juegos.sushiGame
 
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
-import com.badlogic.gdx.graphics.Color
-import com.badlogic.gdx.graphics.Texture
 import com.badlogic.gdx.graphics.g2d.TextureRegion
-import com.badlogic.gdx.maps.MapLayer
-import com.badlogic.gdx.maps.objects.RectangleMapObject
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.TmxMapLoader
-import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer
-import com.badlogic.gdx.math.Rectangle
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
-import com.badlogic.gdx.scenes.scene2d.ui.Table
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
-import com.badlogic.gdx.utils.Align
 import com.badlogic.gdx.utils.viewport.FitViewport
 import com.iprimavera.juegos.NetworkSession
 import kotlinx.serialization.Serializable
@@ -27,7 +18,6 @@ import ktx.actors.onClick
 import ktx.app.KtxGame
 import ktx.app.KtxScreen
 import ktx.scene2d.*
-import ktx.assets.*
 import ktx.tiled.*
 
 data class Jugador(var mano: Mano, val mesa: Mesa)
@@ -42,19 +32,16 @@ class SushiGame(
     private lateinit var enemigo: Jugador
     private var usuarioElegida: Int? = null
     private var enemigoElegida: Int? = null
+    private var partidaEmpezada = false
 
     private lateinit var stage: Stage
-
     private val turnoManager = TurnoManager()
-
-    private var partidaEmpezada = false
 
     private val assets = AssetManager().apply {
         setLoader(TiledMap::class.java, TmxMapLoader())
         load("mapas/SushiGo.tmx", TiledMap::class.java)
         finishLoading()
     }
-
     private var map: TiledMap = assets.get("mapas/SushiGo.tmx", TiledMap::class.java)
     private val capaObjetos = map.layers.get("zonas")
 
@@ -75,6 +62,7 @@ class SushiGame(
 
         partidaEmpezada = false
 
+        // barajar cartas, repartir y enviar al cliente
         if (isHost) {
             val deck = Deck()
             // repartir cartas a jugadores
@@ -126,31 +114,12 @@ class SushiGame(
 
         stage.clear()
 
-//        enemigo.mesa.cartas.forEachIndexed { index, carta ->
-//            val objeto = capaObjetos.objects.get("enemigo")
-//            //val posicion =
-//
-//            val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
-//            val boton = ImageButton(drawable)
-//            boton.setPosition(1f,objeto.y)
-//            boton.setScale(2f)
-//            stage.addActor(boton)
-//        }
-//
-//        usuario.mesa.cartas.forEach { carta ->
-//            val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
-//            val boton = ImageButton(drawable)
-//            filaMesa.add(boton).size(anchoCarta).pad(2f).padTop(10f)
-//        }
-
         fun clickable(boton: ImageButton, index: Int) {
             if (usuarioElegida == index) {
                 boton.isTransform = true
                 boton.setOrigin(boton.width/2f,boton.height/2f)
                 boton.setScale(1.2f)
-            } else {
-                boton.setScale(1f)
-            }
+            } else boton.setScale(1f)
 
             boton.onClick {
                 usuarioElegida = index
@@ -159,24 +128,30 @@ class SushiGame(
             }
         }
 
-        val elegir = capaObjetos.objects.get("elegir")
-        val maxAncho = elegir.width
-        val espacio = 40f
-        val totalOriginal = usuario.mano.cartas.sumOf { it.textura.width.toDouble() }.toFloat() + espacio * (usuario.mano.cartas.size - 1)
-        val escala: Float = maxAncho / totalOriginal
+        fun addTabla(objeto: String, paquete: Paquete) {
 
-        usuario.mano.cartas.forEachIndexed { index, carta ->
-            val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
-            val boton = ImageButton(drawable)
+            val rect = capaObjetos.objects.get(objeto)
+            val maxAncho = rect.width
+            val espacio = 40f
+            val totalOriginal = paquete.cartas.sumOf { it.textura.width.toDouble() }.toFloat() + espacio * (paquete.cartas.size - 1)
+            val escala: Float = maxAncho / totalOriginal
 
-            boton.setPosition(elegir.x+elegir.width/usuario.mano.cartas.count()*index,elegir.y)
-            boton.setSize(carta.textura.width.toFloat()*escala,elegir.height)
+            paquete.cartas.forEachIndexed { index, carta ->
+                val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
+                val boton = ImageButton(drawable)
 
-            clickable(boton,index)
+                boton.setPosition(rect.x+rect.width/paquete.cartas.count()*index,rect.y)
+                boton.setSize(carta.textura.width.toFloat()*escala,rect.height)
 
-            stage.addActor(boton)
+                if (objeto == "elegir") clickable(boton, index)
+
+                stage.addActor(boton)
+            }
         }
 
+        addTabla("enemigo", enemigo.mesa)
+        addTabla("usuario", usuario.mesa)
+        addTabla("elegir", usuario.mano)
     }
 
 
@@ -184,20 +159,13 @@ class SushiGame(
         stage.act(delta)
         stage.draw()
 
-        val usel = usuarioElegida
-        val enel = enemigoElegida
-        if (usel != null && enel != null) {
-
-            turnoManager.usarCartas(usuario, usel)
-            turnoManager.usarCartas(enemigo, enel)
-
+        if (usuarioElegida != null && enemigoElegida != null) {
+            turnoManager.usarCartas(usuario, usuarioElegida!!)
+            turnoManager.usarCartas(enemigo, enemigoElegida!!)
             usuarioElegida = null
             enemigoElegida = null
-
             turnoManager.swapManos(usuario,enemigo)
-
             actualizarBotones()
-
         }
 
         if (!usuario.mano.tieneCartas() && !enemigo.mano.tieneCartas() && partidaEmpezada) {

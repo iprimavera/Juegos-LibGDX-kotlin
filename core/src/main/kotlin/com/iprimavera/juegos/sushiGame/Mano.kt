@@ -1,8 +1,10 @@
 package com.iprimavera.juegos.sushiGame
 
-class Mano {
+interface Paquete {var cartas: MutableList<Carta>}
 
-    var cartas: MutableList<Carta> = mutableListOf()
+class Mano: Paquete {
+
+    override var cartas: MutableList<Carta> = mutableListOf()
 
     fun tieneCartas(): Boolean {
         return cartas.isNotEmpty()

@@ -1,8 +1,8 @@
 package com.iprimavera.juegos.sushiGame
 
-class Mesa {
+class Mesa: Paquete {
 
-    var cartas: MutableList<Carta> = mutableListOf()
+    override var cartas: MutableList<Carta> = mutableListOf()
 
     fun addCarta(carta: Carta) {
         cartas.add(carta)
