@@ -19,6 +19,7 @@ import kotlinx.serialization.json.Json
 import ktx.actors.onClick
 import ktx.app.KtxGame
 import ktx.app.KtxScreen
+import ktx.app.clearScreen
 import ktx.graphics.use
 import ktx.scene2d.*
 import ktx.tiled.*
@@ -162,6 +163,8 @@ class SushiGame(
 
 
     override fun render(delta: Float) {
+        clearScreen(0.18f, 0.18f, 0.18f, 1f)
+
         shape.use(ShapeRenderer.ShapeType.Filled) {
             val arriba = capaObjetos.objects.get("enemigo")
             val abajo = capaObjetos.objects.get("usuario")
