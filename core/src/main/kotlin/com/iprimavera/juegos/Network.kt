@@ -184,7 +184,7 @@ class NetworkSession(private val socket: Socket) {
     }
 
     companion object {
-        const val PORT = 5555
+        const val PORT = 5874
 
         fun startServer(onConnected: (NetworkSession) -> Unit, onError: (Exception) -> Unit) = thread(name = "net-server") {
             var server: ServerSocket? = null

@@ -165,6 +165,7 @@ class SushiGame(
     override fun render(delta: Float) {
         clearScreen(0.18f, 0.18f, 0.18f, 1f)
 
+        shape.projectionMatrix = stage.camera.combined
         shape.use(ShapeRenderer.ShapeType.Filled) {
             val arriba = capaObjetos.objects.get("enemigo")
             val abajo = capaObjetos.objects.get("usuario")
