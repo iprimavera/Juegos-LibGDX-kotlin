@@ -3,6 +3,7 @@ package com.iprimavera.juegos.sushiGame
 import com.badlogic.gdx.Gdx
 import com.badlogic.gdx.assets.AssetManager
 import com.badlogic.gdx.graphics.g2d.TextureRegion
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer
 import com.badlogic.gdx.maps.tiled.TiledMap
 import com.badlogic.gdx.maps.tiled.TmxMapLoader
 import com.badlogic.gdx.scenes.scene2d.Stage
@@ -17,6 +18,8 @@ import kotlinx.serialization.json.Json
 import ktx.actors.onClick
 import ktx.app.KtxGame
 import ktx.app.KtxScreen
+import ktx.graphics.color
+import ktx.graphics.use
 import ktx.scene2d.*
 import ktx.tiled.*
 
@@ -33,6 +36,7 @@ class SushiGame(
     private var usuarioElegida: Int? = null
     private var enemigoElegida: Int? = null
     private var partidaEmpezada = false
+    private val shape: ShapeRenderer = ShapeRenderer()
 
     private lateinit var stage: Stage
     private val turnoManager = TurnoManager()
@@ -116,8 +120,6 @@ class SushiGame(
 
         fun clickable(boton: ImageButton, index: Int) {
             if (usuarioElegida == index) {
-                boton.isTransform = true
-                boton.setOrigin(boton.width/2f,boton.height/2f)
                 boton.setScale(1.2f)
             } else boton.setScale(1f)
 
@@ -139,9 +141,13 @@ class SushiGame(
             paquete.cartas.forEachIndexed { index, carta ->
                 val drawable = TextureRegionDrawable(TextureRegion(carta.textura))
                 val boton = ImageButton(drawable)
+                boton.isTransform = true
 
                 boton.setPosition(rect.x+rect.width/paquete.cartas.count()*index,rect.y)
                 boton.setSize(carta.textura.width.toFloat()*escala,rect.height)
+
+                boton.setOrigin(boton.width/2f,boton.height/2f)
+//                if (rect.name == "enemigo") boton.rotateBy(180f)
 
                 if (paquete is Mano) clickable(boton, index)
 
@@ -156,6 +162,14 @@ class SushiGame(
 
 
     override fun render(delta: Float) {
+        shape.use(ShapeRenderer.ShapeType.Filled) {
+            val arriba = capaObjetos.objects.get("enemigo")
+            val abajo = capaObjetos.objects.get("usuario")
+            val offset = 20f
+            shape.setColor(0.803f, 0.521f, 0.247f, 1f)
+            shape.rect(abajo.x-offset,abajo.y-offset,abajo.width+offset*2,arriba.y-abajo.y+arriba.height+offset*2)
+        }
+
         stage.act(delta)
         stage.draw()
 
@@ -197,5 +211,6 @@ class SushiGame(
     override fun dispose() {
         stage.dispose()
         Carta.disposeAll()
+        shape.dispose()
     }
 }
