@@ -11,6 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.ImageButton
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable
 import com.badlogic.gdx.utils.viewport.FitViewport
+import com.iprimavera.juegos.ConnectionScreen
 import com.iprimavera.juegos.NetworkSession
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -18,7 +19,6 @@ import kotlinx.serialization.json.Json
 import ktx.actors.onClick
 import ktx.app.KtxGame
 import ktx.app.KtxScreen
-import ktx.graphics.color
 import ktx.graphics.use
 import ktx.scene2d.*
 import ktx.tiled.*
@@ -104,7 +104,7 @@ class SushiGame(
                         actualizarBotones()
                         partidaEmpezada = true
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     println("Mensaje desconocido o no válido: $msg")
                 }
             }
@@ -173,12 +173,25 @@ class SushiGame(
         stage.act(delta)
         stage.draw()
 
+        if (!session.running) {
+            Gdx.app.postRunnable {
+                game.removeScreen<ConnectionScreen>()
+                game.removeScreen<SushiGame>()
+
+                game.addScreen(ConnectionScreen(game, { session, isHost ->
+                    game.addScreen(SushiGame(game, session, isHost))
+                    game.setScreen<SushiGame>()
+                }))
+                game.setScreen<ConnectionScreen>()
+            }
+        }
+
         if (usuarioElegida != null && enemigoElegida != null) {
             turnoManager.usarCartas(usuario, usuarioElegida!!)
             turnoManager.usarCartas(enemigo, enemigoElegida!!)
             usuarioElegida = null
             enemigoElegida = null
-            turnoManager.swapManos(usuario,enemigo)
+            turnoManager.swapManos(usuario, enemigo)
             actualizarBotones()
         }
 

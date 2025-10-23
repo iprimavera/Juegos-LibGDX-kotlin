@@ -1,17 +1,14 @@
 package com.iprimavera.juegos
 
 import com.badlogic.gdx.Gdx
-import com.badlogic.gdx.graphics.Color
 import com.badlogic.gdx.graphics.OrthographicCamera
 import com.badlogic.gdx.graphics.g2d.BitmapFont
-import com.badlogic.gdx.graphics.g2d.GlyphLayout
 import com.badlogic.gdx.scenes.scene2d.InputEvent
 import com.badlogic.gdx.scenes.scene2d.Stage
 import com.badlogic.gdx.scenes.scene2d.ui.Label
 import com.badlogic.gdx.scenes.scene2d.ui.Skin
 import com.badlogic.gdx.scenes.scene2d.ui.Table
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton
-import com.badlogic.gdx.scenes.scene2d.ui.TextField
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener
 import com.badlogic.gdx.utils.viewport.FitViewport
 import ktx.app.KtxGame
@@ -29,20 +26,17 @@ import java.net.Socket
 class ConnectionScreen(
     private val game: KtxGame<KtxScreen>,
     private val onConnected: (session: NetworkSession, isHost: Boolean) -> Unit,
-    private val title: String = "Conexion LAN"
 ) : KtxScreen {
 
+    private val title: String = "Conexion LAN"
     private val camera = OrthographicCamera()
     private val viewport = FitViewport(800f, 480f, camera)
     private val stage = Stage(viewport)
     private val font = BitmapFont()
-    private val layout = GlyphLayout()
     private val skin = Skin(Gdx.files.internal("uiskin.json"))
 
     private var statusLabel: Label
     private var ipLabel: Label
-    private var ipField: TextField? = null
-    private var connectButton: TextButton? = null
 
     private var ips: List<String> = listLocalIPv4()
     private var connecting = false
@@ -71,7 +65,7 @@ class ConnectionScreen(
 
         clientButton.addListener(object : ClickListener() {
             override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                showIpInput()
+                autoConnectToHost()
             }
         })
 
@@ -88,43 +82,35 @@ class ConnectionScreen(
         stage.draw()
     }
 
-    private fun showIpInput() {
-        if (ipField != null) return
+    private fun autoConnectToHost() {
+        if (connecting) return
+        connecting = true
 
-        val inputTable = Table()
-        inputTable.setFillParent(true)
+        val baseIp = ips.firstOrNull()?.substringBeforeLast('.') ?: return
+        statusLabel.setText("Buscando host...")
 
-        val field = TextField("", skin)
-        field.messageText = "Introduce IP del host"
-        val connectBtn = TextButton("Conectar", skin)
-        val cancelBtn = TextButton("Cancelar", skin)
-
-        inputTable.add(Label("Conectarse a partida", skin)).colspan(2).padBottom(20f).row()
-        inputTable.add(field).width(300f).padRight(10f)
-        inputTable.add(connectBtn).width(150f).row()
-        inputTable.add(cancelBtn).colspan(2).padTop(20f)
-
-        stage.addActor(inputTable)
-        ipField = field
-        connectButton = connectBtn
-
-        connectBtn.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                val ip = field.text.trim()
-                if (ip.isNotEmpty()) connectToIp(ip)
-                inputTable.remove()
-                ipField = null
-                connectButton = null
+        thread {
+            for (i in 1..254) {
+                val testIp = "$baseIp.$i"
+                try {
+                    val socket = Socket()
+                    socket.connect(java.net.InetSocketAddress(testIp, NetworkSession.PORT), 200)
+                    val session = NetworkSession(socket)
+                    session.startReading()
+                    Gdx.app.postRunnable {
+                        statusLabel.setText("Conectado a $testIp")
+                        onConnected(session, false)
+                    }
+                    return@thread
+                } catch (_: Exception) {
+                    // no host
+                }
             }
-        })
-
-        cancelBtn.addListener(object : ClickListener() {
-            override fun clicked(event: InputEvent?, x: Float, y: Float) {
-                inputTable.remove()
-                ipField = null
-                connectButton = null
+            Gdx.app.postRunnable {
+                statusLabel.setText("No se encontró ningún host.")
+                connecting = false
             }
-        })
+        }
     }
 
     private fun startAsHost() {
@@ -138,22 +124,6 @@ class ConnectionScreen(
         }, onError = { e ->
             Gdx.app.postRunnable {
                 statusLabel.setText("Error servidor: ${e.message}")
-                connecting = false
-            }
-        })
-    }
-
-    private fun connectToIp(ip: String) {
-        connecting = true
-        statusLabel.setText("Conectando a $ip...")
-        NetworkSession.connectTo(ip, onConnected = { sess ->
-            Gdx.app.postRunnable {
-                statusLabel.setText("Conectado a ${sess.remoteAddress}")
-                onConnected(sess, false)
-            }
-        }, onError = { e ->
-            Gdx.app.postRunnable {
-                statusLabel.setText("Error cliente: ${e.message}")
                 connecting = false
             }
         })
@@ -229,13 +199,13 @@ class NetworkSession(private val socket: Socket) {
             } finally { try { server?.close() } catch (_: Exception) {} }
         }
 
-        fun connectTo(ip: String, onConnected: (NetworkSession) -> Unit, onError: (Exception) -> Unit) = thread(name = "net-client") {
-            try {
-                val socket = Socket(ip, PORT)
-                val session = NetworkSession(socket)
-                session.startReading()
-                onConnected(session)
-            } catch (e: Exception) { onError(e) }
-        }
+//        fun connectTo(ip: String, onConnected: (NetworkSession) -> Unit, onError: (Exception) -> Unit) = thread(name = "net-client") {
+//            try {
+//                val socket = Socket(ip, PORT)
+//                val session = NetworkSession(socket)
+//                session.startReading()
+//                onConnected(session)
+//            } catch (e: Exception) { onError(e) }
+//        }
     }
 }
